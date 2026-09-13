@@ -1,3 +1,4 @@
+import { API_BASE } from '../config.js';
 import React, { useState } from 'react';
 import { ScrollText, Sparkles, Copy, Check, Zap } from 'lucide-react';
 
@@ -22,7 +23,7 @@ export default function ContractTab() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/contract', {
+      const response = await fetch('${API_BASE}/api/contract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
