@@ -1,24 +1,11 @@
 import React, { useState } from 'react';
-import { FileText, Sparkles, Copy, Check, Send, User, Briefcase, Zap, HelpCircle } from 'lucide-react';
+import { FileText, Sparkles, Copy, Check, Zap } from 'lucide-react';
 
-export default function ProposalTab({ presetData, onClearPreset }) {
+export default function ProposalTab() {
   const [formData, setFormData] = useState({
-    jobTitle: presetData?.jobTitle || '',
-    jobDescription: presetData?.jobDescription || '',
-    clientName: presetData?.clientName || '',
-    skills: presetData?.skills || '',
-    experienceYears: presetData?.experienceYears || '2 years',
-    tone: presetData?.tone || 'Confident & Professional',
-    proposedRate: presetData?.proposedRate || '$35/hr',
-    portfolioLinks: presetData?.portfolioLinks || ''
+    jobDescription: '',
+    skills: ''
   });
-
-  // Update if preset changes
-  React.useEffect(() => {
-    if (presetData) {
-      setFormData(prev => ({ ...prev, ...presetData }));
-    }
-  }, [presetData]);
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -29,6 +16,7 @@ export default function ProposalTab({ presetData, onClearPreset }) {
     e?.preventDefault();
     setLoading(true);
     setError(null);
+    setResult(null);
 
     try {
       const response = await fetch('/api/proposal', {
@@ -52,22 +40,15 @@ export default function ProposalTab({ presetData, onClearPreset }) {
 
   const handleCopy = () => {
     if (!result) return;
-    const fullText = `Subject: ${result.subjectLine}\n\n${result.proposalBody}\n\nCall to action:\n${result.callToAction}`;
-    navigator.clipboard.writeText(fullText);
+    navigator.clipboard.writeText(result);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const loadSample = () => {
     setFormData({
-      jobTitle: 'Full-Stack React & Node.js Developer for SaaS Analytics Dashboard',
       jobDescription: 'Looking for a fast, communicative developer to build a modern React dashboard connected to an Express REST API with charts, user auth, and responsive UI in 10-14 days. Must have experience with Tailwind and clean code.',
-      clientName: 'Alex Rivera',
-      skills: 'React 18, Vite, Tailwind CSS, Express, PostgreSQL, REST APIs',
-      experienceYears: '2+ years freelancing',
-      tone: 'Confident & Professional',
-      proposedRate: '$40/hr (or $1,400 fixed milestone)',
-      portfolioLinks: 'https://github.com/alex-dev'
+      skills: 'React 18, Vite, Tailwind CSS, Express, PostgreSQL, REST APIs, 2+ years freelancing experience'
     });
   };
 
@@ -87,7 +68,7 @@ export default function ProposalTab({ presetData, onClearPreset }) {
               </span>
             </div>
             <p className="text-sm text-slate-300 mt-0.5">
-              Turn client job briefs into tailored, high-converting freelance proposals with custom hooks & value propositions.
+              Turn a client job brief + your skills into a ready-to-send proposal.
             </p>
           </div>
         </div>
@@ -108,124 +89,35 @@ export default function ProposalTab({ presetData, onClearPreset }) {
         <div className="lg:col-span-6 space-y-4">
           <form onSubmit={handleSubmit} className="glass-card p-6 rounded-2xl space-y-4 shadow-xl">
             <h3 className="text-base font-semibold text-white flex items-center space-x-2 border-b border-slate-800 pb-3">
-              <span>Job Post & Freelancer Profile</span>
+              <span>Job Post & Your Skills</span>
             </h3>
 
-            {/* Job Title */}
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Job Title / Project Headline <span className="text-emerald-400">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Full-Stack React & Node.js Developer"
-                value={formData.jobTitle}
-                onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white placeholder-slate-500"
-              />
-            </div>
-
-            {/* Job Description */}
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1">
                 Client Job Description / Brief <span className="text-emerald-400">*</span>
               </label>
               <textarea
-                rows={4}
+                rows={6}
                 required
-                placeholder="Paste the client's job requirements, what they need built, and expectations..."
+                placeholder="Paste the client's job post, what they need built, and expectations..."
                 value={formData.jobDescription}
                 onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
                 className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white placeholder-slate-500"
               />
             </div>
 
-            {/* Client Name & Tone */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Client Name (if known)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Alex (Optional)"
-                  value={formData.clientName}
-                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white placeholder-slate-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Tone & Style
-                </label>
-                <select
-                  value={formData.tone}
-                  onChange={(e) => setFormData({ ...formData, tone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white bg-slate-900"
-                >
-                  <option>Confident & Professional</option>
-                  <option>Friendly & Approachable</option>
-                  <option>Direct & Results-Oriented</option>
-                  <option>Consultative Expert</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Skills & Experience */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Your Tech Stack / Skills
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. React, Node.js, Tailwind"
-                  value={formData.skills}
-                  onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white placeholder-slate-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Experience Level
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 1-2 years freelancing"
-                  value={formData.experienceYears}
-                  onChange={(e) => setFormData({ ...formData, experienceYears: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white placeholder-slate-500"
-                />
-              </div>
-            </div>
-
-            {/* Rate & Portfolio */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Proposed Rate / Budget
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. $35/hr or $1,200 fixed"
-                  value={formData.proposedRate}
-                  onChange={(e) => setFormData({ ...formData, proposedRate: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white placeholder-slate-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Portfolio / GitHub Link
-                </label>
-                <input
-                  type="text"
-                  placeholder="https://github.com/..."
-                  value={formData.portfolioLinks}
-                  onChange={(e) => setFormData({ ...formData, portfolioLinks: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white placeholder-slate-500"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">
+                Your Relevant Skills / Experience <span className="text-emerald-400">*</span>
+              </label>
+              <textarea
+                rows={3}
+                required
+                placeholder="e.g. React, Node.js, Tailwind CSS, 2 years freelancing experience"
+                value={formData.skills}
+                onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                className="w-full px-3.5 py-2.5 rounded-xl glass-input text-sm text-white placeholder-slate-500"
+              />
             </div>
 
             <button
@@ -236,12 +128,12 @@ export default function ProposalTab({ presetData, onClearPreset }) {
               {loading ? (
                 <>
                   <Sparkles className="w-4 h-4 animate-spin text-slate-950" />
-                  <span>Synthesizing Winning Proposal with AI...</span>
+                  <span>Generating Proposal...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 text-slate-950" />
-                  <span>Generate Tailored Proposal</span>
+                  <span>Generate Proposal</span>
                 </>
               )}
             </button>
@@ -250,18 +142,10 @@ export default function ProposalTab({ presetData, onClearPreset }) {
 
         {/* Output Column */}
         <div className="lg:col-span-6 space-y-4">
-          <div className="glass-card p-6 rounded-2xl min-h-[500px] flex flex-col justify-between shadow-xl">
+          <div className="glass-card p-6 rounded-2xl min-h-[400px] flex flex-col justify-between shadow-xl">
             <div>
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-base font-semibold text-white">Generated Client Proposal</h3>
-                  {result && (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                      Ready to Send
-                    </span>
-                  )}
-                </div>
-
+                <h3 className="text-base font-semibold text-white">Generated Proposal</h3>
                 {result && (
                   <button
                     onClick={handleCopy}
@@ -291,12 +175,7 @@ export default function ProposalTab({ presetData, onClearPreset }) {
               {loading && (
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
                   <div className="w-12 h-12 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-                  <p className="text-sm font-medium text-slate-300">
-                    Analyzing job specifications & engineering proposal hooks...
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Applying value-based pricing and milestone breakdown
-                  </p>
+                  <p className="text-sm font-medium text-slate-300">Writing your proposal...</p>
                 </div>
               )}
 
@@ -305,63 +184,17 @@ export default function ProposalTab({ presetData, onClearPreset }) {
                   <FileText className="w-12 h-12 stroke-[1.2] text-slate-600" />
                   <p className="text-sm font-medium text-slate-400">No proposal generated yet</p>
                   <p className="text-xs max-w-sm">
-                    Fill out the job brief on the left or click "Load Sample Job Brief" to see a full tailored proposal.
+                    Fill out the job brief on the left or click "Load Sample Job Brief."
                   </p>
                 </div>
               )}
 
               {!loading && result && (
-                <div className="space-y-4 text-sm">
-                  {/* Subject Line Pill */}
-                  {result.subjectLine && (
-                    <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
-                      <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block mb-0.5">
-                        Subject Line Hook
-                      </span>
-                      <p className="text-slate-200 font-medium">{result.subjectLine}</p>
-                    </div>
-                  )}
-
-                  {/* Proposal Body */}
-                  <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-200 whitespace-pre-line leading-relaxed font-sans text-xs sm:text-sm">
-                    {result.proposalBody}
-                  </div>
-
-                  {/* Key Highlights */}
-                  {result.keyHighlights && result.keyHighlights.length > 0 && (
-                    <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/20">
-                      <span className="text-xs font-semibold text-emerald-400 block mb-2">
-                        Key Selling Points Highlighted:
-                      </span>
-                      <ul className="space-y-1.5">
-                        {result.keyHighlights.map((highlight, idx) => (
-                          <li key={idx} className="flex items-start space-x-2 text-xs text-slate-300">
-                            <span className="text-emerald-400 font-bold">•</span>
-                            <span>{highlight}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Call to action */}
-                  {result.callToAction && (
-                    <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-                      <span className="text-slate-400 font-medium block mb-1">Closing Call-To-Action:</span>
-                      <p className="text-emerald-300 font-medium italic">"{result.callToAction}"</p>
-                    </div>
-                  )}
+                <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-slate-200 whitespace-pre-line leading-relaxed text-xs sm:text-sm">
+                  {result}
                 </div>
               )}
             </div>
-
-            {/* Footer metadata */}
-            {result?.estimatedDeliverySuggestion && (
-              <div className="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
-                <span>⏱️ Timeline Suggestion:</span>
-                <span className="text-slate-300 font-medium">{result.estimatedDeliverySuggestion}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
