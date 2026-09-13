@@ -1,96 +1,85 @@
-import express from 'express';
-import { generateWithGroq } from '../utils/groqClient.js';
+import express from "express";
+import Groq from "groq-sdk";
 
 const router = express.Router();
 
-/**
- * POST /api/proposal
- * Request Body:
- * {
- *   "jobTitle": "Full Stack React Developer",
- *   "jobDescription": "We need someone to build an MVP dashboard in 2 weeks...",
- *   "clientName": "Alex (Optional)",
- *   "skills": "React, Node.js, Tailwind CSS, REST APIs",
- *   "experienceYears": "2 years",
- *   "tone": "Confident & Professional" | "Friendly & Approachable" | "Direct & Results-Oriented",
- *   "proposedRate": "$35/hr or $1,200 fixed",
- *   "portfolioLinks": "https://github.com/johndoe"
- * }
- */
-router.post('/', async (req, res) => {
-  try {
-    const {
-      jobTitle = '',
-      jobDescription = '',
-      clientName = '',
-      skills = '',
-      experienceYears = '',
-      tone = 'Confident & Professional',
-      proposedRate = '',
-      portfolioLinks = ''
-    } = req.body;
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-    if (!jobDescription && !jobTitle) {
+function buildPrompt(jobDescription, skills) {
+  return `You are a freelancer writing a short, personal proposal to a potential client in response to their job post. Write in a natural, human voice — not generic AI filler, not a bulleted list, not marketing-speak.
+
+Client's job post/brief:
+"""
+${jobDescription}
+"""
+
+Freelancer's relevant skills/experience:
+"""
+${skills}
+"""
+
+Write a proposal (150-200 words) that:
+1. Opens with a short, specific line showing you actually read their brief (not a generic greeting).
+2. Explains briefly why this freelancer is a good fit, tying their skills directly to what the client needs.
+3. Ends with a light, low-pressure call-to-action (e.g. inviting a quick chat or asking a clarifying question).
+
+Do not use headers, bullet points, or placeholders like [Client Name]. Write it as plain, ready-to-send text.`;
+}
+
+router.post("/", async (req, res) => {
+  try {
+    const { jobDescription, skills } = req.body;
+
+    if (!jobDescription || typeof jobDescription !== "string" || !jobDescription.trim()) {
       return res.status(400).json({
         success: false,
-        error: 'Please provide a job title or job description brief.'
+        error: "jobDescription is required and must be a non-empty string.",
+      });
+    }
+    if (!skills || typeof skills !== "string" || !skills.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "skills is required and must be a non-empty string.",
       });
     }
 
-    const systemPrompt = `You are a high-performing freelance strategist and proposal writer who helps freelancers win high-value contracts on platforms like Upwork, Contra, and direct outreach.
-Generate a winning, non-generic, high-converting freelance proposal.
-Always respond in JSON format with the following keys:
-{
-  "subjectLine": "A compelling hook or subject line",
-  "openingHook": "An engaging first 2 sentences that immediately show you read the job post",
-  "proposalBody": "The full proposal text formatted with clear paragraphs, value proposition, and call to action",
-  "keyHighlights": ["Highlight 1: relevant experience", "Highlight 2: relevant tech stack or solution", "Highlight 3: quick turnaround / milestone approach"],
-  "callToAction": "A low-friction closing question/call to action",
-  "estimatedDeliverySuggestion": "Estimated timeframe or milestone breakdown recommendation"
-}`;
+    const prompt = buildPrompt(jobDescription.trim(), skills.trim());
 
-    const userPrompt = `Job Title: ${jobTitle}
-Job Description / Brief: ${jobDescription}
-Client Name: ${clientName || 'Hiring Manager'}
-Freelancer Skills: ${skills || 'Full stack development'}
-Experience: ${experienceYears || '1-2 years freelancing experience'}
-Desired Tone: ${tone}
-Proposed Rate / Budget: ${proposedRate || 'Flexible based on scope'}
-Portfolio / Links: ${portfolioLinks || 'Available on request'}`;
+    let completion;
+    try {
+      completion = await groq.chat.completions.create({
+        model: "openai/gpt-oss-120b",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 1024,
+        reasoning_effort: "low",
+      });
+    } catch (groqError) {
+      console.error("Groq API error:", groqError.message);
+      return res.status(502).json({
+        success: false,
+        error: "Failed to generate proposal — the AI service is currently unavailable. Please try again.",
+      });
+    }
 
-    const fallbackGenerator = () => {
-      const clientGreeting = clientName ? `Hi ${clientName}` : 'Hi there';
-      const cleanTitle = jobTitle || 'your project';
-      return {
-        subjectLine: `Experienced Freelancer for ${cleanTitle} — Ready to Deliver`,
-        openingHook: `${clientGreeting}, I saw your post looking for help with ${cleanTitle} and immediately knew this aligns with my hands-on experience in building fast, responsive solutions.`,
-        proposalBody: `${clientGreeting},\n\nI reviewed your requirements for ${cleanTitle} and understand that you need a dependable, communicative developer who can deliver clean code quickly without constant back-and-forth.\n\nHere is how I would tackle this for you:\n1. Quick Discovery & Requirements Confirmation: Review design/specs and align on key milestones.\n2. Rapid Implementation: Build with clean, maintainable code (${skills || 'modern stack'}) and regular video/message check-ins.\n3. Testing & Delivery: Thorough QA, responsive bug-fixing, and a smooth handoff.\n\nMy background includes ${experienceYears ? `${experienceYears} of experience` : 'extensive project work'} delivering high-performance applications with ${skills || 'relevant technologies'}.\n\nI am available to start immediately and can deliver this within your required timeframe.`,
-        keyHighlights: [
-          `Specialized in ${skills || 'Full Stack Development'} with clean architecture`,
-          'Milestone-driven delivery with daily async updates',
-          'Post-delivery support included to ensure smooth launch'
-        ],
-        callToAction: 'Would you be open to a quick 10-minute chat or exchanging a few messages to discuss your timeline and milestones?',
-        estimatedDeliverySuggestion: 'Phase 1 MVP: 5-7 days | Final polish & review: 2-3 days'
-      };
-    };
+    const result = completion.choices?.[0]?.message?.content?.trim();
 
-    const result = await generateWithGroq({
-      systemPrompt,
-      userPrompt,
-      jsonMode: true,
-      fallbackFn: fallbackGenerator
-    });
+    if (!result) {
+      return res.status(502).json({
+        success: false,
+        error: "The AI service returned an empty response. Please try again.",
+      });
+    }
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      result
+      result,
     });
-  } catch (error) {
-    console.error('Proposal route error:', error);
+  } catch (err) {
+    console.error("Unexpected error in /api/proposal:", err);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Failed to generate proposal.'
+      error: "Something went wrong while generating the proposal.",
     });
   }
 });
