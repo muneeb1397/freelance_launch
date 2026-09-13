@@ -1,3 +1,4 @@
+import { API_BASE } from '../config.js';
 import React, { useState } from 'react';
 import { MessageSquare, Sparkles, Copy, Check, Zap } from 'lucide-react';
 
@@ -23,7 +24,7 @@ export default function MessageTab() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/message', {
+      const response = await fetch('${API_BASE}/api/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
