@@ -1,3 +1,4 @@
+import { API_BASE } from '../config.js';
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Activity, ShieldCheck, Github } from 'lucide-react';
 
@@ -7,7 +8,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch('/api/health');
+        const res = await fetch(`${API_BASE}/api/health`);
         if (res.ok) {
           setServerStatus('online');
         } else {
