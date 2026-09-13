@@ -1,3 +1,4 @@
+import { API_BASE } from '../config.js';
 import React, { useState } from 'react';
 import { FileText, Sparkles, Copy, Check, Zap } from 'lucide-react';
 
@@ -19,7 +20,7 @@ export default function ProposalTab() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/proposal', {
+      const response = await fetch('${API_BASE}/api/proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
